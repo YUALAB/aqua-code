@@ -1,0 +1,131 @@
+#!/bin/bash
+set -e
+
+# aqua-code インストーラー
+# Claude Code + Ollama ワンコマンドランチャー
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+BIN_DIR="$HOME/bin"
+CONFIG_DIR="$HOME/.aqua-code"
+DEFAULT_MODEL="glm-5:cloud"
+
+echo "==================================="
+echo "  aqua-code インストーラー"
+echo "==================================="
+echo ""
+
+# --- macOS チェック ---
+if [ "$(uname)" != "Darwin" ]; then
+  echo "エラー: このツールは macOS 専用です"
+  exit 1
+fi
+
+# --- Homebrew チェック ---
+if ! command -v brew >/dev/null 2>&1; then
+  echo "エラー: Homebrew がインストールされていません"
+  echo "  インストール: https://brew.sh"
+  exit 1
+fi
+echo "[✓] Homebrew"
+
+# --- Ollama チェック ---
+if ! command -v ollama >/dev/null 2>&1; then
+  echo "Ollama をインストール中..."
+  brew install ollama
+fi
+echo "[✓] Ollama"
+
+# --- Claude Code チェック ---
+if ! command -v claude >/dev/null 2>&1; then
+  echo ""
+  echo "エラー: Claude Code CLI がインストールされていません"
+  echo "  インストール:"
+  echo "    npm install -g @anthropic-ai/claude-code"
+  echo "  または:"
+  echo "    brew install claude-code"
+  echo ""
+  exit 1
+fi
+echo "[✓] Claude Code CLI"
+
+# --- Ollama 起動 ---
+if ! curl -sf http://localhost:11434/api/tags >/dev/null 2>&1; then
+  echo ""
+  echo "Ollama を起動中..."
+  open -a Ollama
+  for i in {1..15}; do
+    sleep 1
+    if curl -sf http://localhost:11434/api/tags >/dev/null 2>&1; then
+      break
+    fi
+    if [ "$i" -eq 15 ]; then
+      echo "エラー: Ollama が起動できませんでした"
+      exit 1
+    fi
+  done
+  echo "Ollama 起動完了"
+fi
+
+# --- モデル取得 ---
+echo ""
+echo "モデル ${DEFAULT_MODEL} を取得中..."
+ollama pull "$DEFAULT_MODEL"
+echo "[✓] モデル ${DEFAULT_MODEL}"
+
+# --- 設定ディレクトリ作成 ---
+mkdir -p "$CONFIG_DIR"
+cat > "$CONFIG_DIR/settings.json" << 'EOF'
+{
+  "permissions": {
+    "allow": [],
+    "deny": []
+  },
+  "preferences": {
+    "verbose": false
+  }
+}
+EOF
+echo "[✓] 設定ディレクトリ: $CONFIG_DIR"
+
+# --- ランチャーを ~/bin にコピー ---
+mkdir -p "$BIN_DIR"
+cp "$SCRIPT_DIR/aqua-code.sh" "$BIN_DIR/aqua-code"
+chmod +x "$BIN_DIR/aqua-code"
+echo "[✓] ランチャー: $BIN_DIR/aqua-code"
+
+# --- PATH 設定（~/.zshrc） ---
+ZSHRC="$HOME/.zshrc"
+PATH_LINE='export PATH="$HOME/bin:$PATH"'
+
+if [ -f "$ZSHRC" ]; then
+  if ! grep -qF 'PATH="$HOME/bin' "$ZSHRC"; then
+    echo "" >> "$ZSHRC"
+    echo "# aqua-code" >> "$ZSHRC"
+    echo "$PATH_LINE" >> "$ZSHRC"
+    echo "[✓] PATH を ~/.zshrc に追加しました"
+  else
+    echo "[✓] PATH は既に設定済み"
+  fi
+else
+  echo "# aqua-code" > "$ZSHRC"
+  echo "$PATH_LINE" >> "$ZSHRC"
+  echo "[✓] ~/.zshrc を作成し PATH を追加しました"
+fi
+
+# --- 完了 ---
+echo ""
+echo "==================================="
+echo "  インストール完了！"
+echo "==================================="
+echo ""
+echo "使い方:"
+echo "  aqua-code              # 対話モード起動"
+echo "  aqua-code \"質問\"       # ワンショット実行"
+echo "  aqua-code --help       # ヘルプ表示"
+echo ""
+echo "モデル変更:"
+echo "  AQUA_CODE_MODEL=qwen3-coder:480b-cloud aqua-code"
+echo ""
+echo "※ 新しいターミナルを開くか、以下を実行してください:"
+echo "  source ~/.zshrc"
+echo ""
