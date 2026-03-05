@@ -20,31 +20,35 @@ if [ "$(uname)" != "Darwin" ]; then
   exit 1
 fi
 
-# --- Homebrew チェック ---
+# --- Homebrew チェック & インストール ---
 if ! command -v brew >/dev/null 2>&1; then
-  echo "エラー: Homebrew がインストールされていません"
-  echo "  インストール: https://brew.sh"
-  exit 1
+  echo "Homebrew をインストール中..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  # Apple Silicon の場合 PATH を通す
+  if [ -f /opt/homebrew/bin/brew ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  fi
 fi
 echo "[✓] Homebrew"
 
-# --- Ollama チェック ---
+# --- Node.js チェック & インストール ---
+if ! command -v node >/dev/null 2>&1; then
+  echo "Node.js をインストール中..."
+  brew install node
+fi
+echo "[✓] Node.js"
+
+# --- Ollama チェック & インストール ---
 if ! command -v ollama >/dev/null 2>&1; then
   echo "Ollama をインストール中..."
   brew install ollama
 fi
 echo "[✓] Ollama"
 
-# --- Claude Code チェック ---
+# --- Claude Code チェック & インストール ---
 if ! command -v claude >/dev/null 2>&1; then
-  echo ""
-  echo "エラー: Claude Code CLI がインストールされていません"
-  echo "  インストール:"
-  echo "    npm install -g @anthropic-ai/claude-code"
-  echo "  または:"
-  echo "    brew install claude-code"
-  echo ""
-  exit 1
+  echo "Claude Code CLI をインストール中..."
+  npm install -g @anthropic-ai/claude-code
 fi
 echo "[✓] Claude Code CLI"
 
