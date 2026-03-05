@@ -7,18 +7,22 @@ Claude Code + Ollama ワンコマンドランチャー。
 
 ## インストール
 
+ターミナルにこれを貼るだけ:
+
 ```bash
-cd ~/aqua-code
-bash install.sh
+curl -fsSL https://raw.githubusercontent.com/YUALAB/aqua-code/main/install.sh | bash
 ```
 
-インストーラーが以下を自動で行います:
+全部自動でインストールされます:
 
-- Homebrew / Ollama / Claude Code の依存確認
-- Ollama 未インストール時は `brew install ollama`
-- `glm-5:cloud` モデルの取得
-- `~/.aqua-code/settings.json` 生成
-- `~/bin/aqua-code` にランチャー配置
+- Xcode Command Line Tools
+- Homebrew
+- Node.js
+- Ollama
+- Claude Code CLI
+- `glm-5:cloud` モデル
+- `~/.aqua-code/settings.json`（分離設定）
+- `~/bin/aqua-code`（ランチャー）
 - `~/.zshrc` に PATH 追加（重複時スキップ）
 
 ## 使い方
@@ -59,7 +63,6 @@ Ollama 起動確認（停止中なら自動起動）
 環境変数をインラインで設定（export しない = 親シェルに影響なし）
   - CLAUDE_CONFIG_DIR=$HOME/.aqua-code  ← ~/.claude/ と完全分離
   - ANTHROPIC_BASE_URL=http://localhost:11434
-  - ANTHROPIC_AUTH_TOKEN=ollama
   - ANTHROPIC_API_KEY=ollama
     ↓
 claude --model glm-5:cloud "$@"

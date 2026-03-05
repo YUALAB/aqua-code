@@ -1,10 +1,9 @@
 #!/bin/bash
 set -e
 
-# aqua-code インストーラー
-# Claude Code + Ollama ワンコマンドランチャー
+# aqua-code インストーラー（自己完結型）
+# curl -fsSL https://raw.githubusercontent.com/YUALAB/aqua-code/main/install.sh | bash
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BIN_DIR="$HOME/bin"
 CONFIG_DIR="$HOME/.aqua-code"
 DEFAULT_MODEL="glm-5:cloud"
@@ -19,6 +18,15 @@ if [ "$(uname)" != "Darwin" ]; then
   echo "エラー: このツールは macOS 専用です"
   exit 1
 fi
+
+# --- Xcode Command Line Tools チェック & インストール ---
+if ! xcode-select -p >/dev/null 2>&1; then
+  echo "Xcode Command Line Tools をインストール中..."
+  xcode-select --install
+  echo "インストールダイアログが表示されます。完了後、再度このスクリプトを実行してください。"
+  exit 0
+fi
+echo "[✓] Xcode Command Line Tools"
 
 # --- Homebrew チェック & インストール ---
 if ! command -v brew >/dev/null 2>&1; then
@@ -78,7 +86,7 @@ echo "[✓] モデル ${DEFAULT_MODEL}"
 
 # --- 設定ディレクトリ作成 ---
 mkdir -p "$CONFIG_DIR"
-cat > "$CONFIG_DIR/settings.json" << 'EOF'
+cat > "$CONFIG_DIR/settings.json" << 'SETTINGS'
 {
   "permissions": {
     "allow": [],
@@ -88,12 +96,48 @@ cat > "$CONFIG_DIR/settings.json" << 'EOF'
     "verbose": false
   }
 }
-EOF
+SETTINGS
 echo "[✓] 設定ディレクトリ: $CONFIG_DIR"
 
-# --- ランチャーを ~/bin にコピー ---
+# --- ランチャーを ~/bin に生成（埋め込み） ---
 mkdir -p "$BIN_DIR"
-cp "$SCRIPT_DIR/aqua-code.sh" "$BIN_DIR/aqua-code"
+cat > "$BIN_DIR/aqua-code" << 'LAUNCHER'
+#!/bin/bash
+set -e
+
+# aqua-code: Claude Code + Ollama ワンコマンドランチャー
+# ~/.claude/ とは完全に分離された環境で動作します
+
+# デフォルトモデル（環境変数で上書き可能）
+MODEL="${AQUA_CODE_MODEL:-glm-5:cloud}"
+
+# Ollama が起動しているか確認、なければ起動
+if ! curl -sf http://localhost:11434/api/tags >/dev/null 2>&1; then
+  echo "Ollama を起動中..."
+  open -a Ollama
+  # 起動待ち（最大15秒）
+  for i in {1..15}; do
+    sleep 1
+    if curl -sf http://localhost:11434/api/tags >/dev/null 2>&1; then
+      break
+    fi
+    if [ "$i" -eq 15 ]; then
+      echo "エラー: Ollama が起動できませんでした"
+      exit 1
+    fi
+  done
+  echo "Ollama 起動完了"
+fi
+
+# Claude Code を Ollama 経由で起動（完全分離）
+# インライン環境変数のため親シェルには影響しない
+CLAUDE_CONFIG_DIR="$HOME/.aqua-code" \
+ANTHROPIC_API_KEY=ollama \
+ANTHROPIC_BASE_URL=http://localhost:11434 \
+DISABLE_AUTOUPDATER=1 \
+DISABLE_TELEMETRY=1 \
+  claude --model "$MODEL" "$@"
+LAUNCHER
 chmod +x "$BIN_DIR/aqua-code"
 echo "[✓] ランチャー: $BIN_DIR/aqua-code"
 
