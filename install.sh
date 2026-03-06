@@ -2,7 +2,7 @@
 set -e
 
 # aqua-code インストーラー（自己完結型）
-# curl -fsSL https://raw.githubusercontent.com/YUALAB/aqua-code/main/install.sh | bash
+# curl -fsSL https://raw.githubusercontent.com/YUALAB/aqua-code/main/install.sh -o /tmp/aqua-install.sh && bash /tmp/aqua-install.sh
 
 BIN_DIR="$HOME/bin"
 CONFIG_DIR="$HOME/.aqua-code"
@@ -22,9 +22,12 @@ fi
 # --- Xcode Command Line Tools チェック & インストール ---
 if ! xcode-select -p >/dev/null 2>&1; then
   echo "Xcode Command Line Tools をインストール中..."
+  echo "ダイアログが表示されたら「インストール」をクリックしてください..."
   xcode-select --install
-  echo "インストールダイアログが表示されます。完了後、再度このスクリプトを実行してください。"
-  exit 0
+  # インストール完了を待機
+  until xcode-select -p >/dev/null 2>&1; do
+    sleep 5
+  done
 fi
 echo "[✓] Xcode Command Line Tools"
 

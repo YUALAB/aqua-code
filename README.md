@@ -10,7 +10,7 @@ Claude Code + Ollama ワンコマンドランチャー。
 ターミナルにこれを貼るだけ:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YUALAB/aqua-code/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/YUALAB/aqua-code/main/install.sh -o /tmp/aqua-install.sh && bash /tmp/aqua-install.sh
 ```
 
 全部自動でインストールされます:
