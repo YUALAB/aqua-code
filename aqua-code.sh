@@ -10,7 +10,7 @@ MODEL="${AQUA_CODE_MODEL:-glm-5:cloud}"
 # Ollama が起動しているか確認、なければ起動
 if ! curl -sf http://localhost:11434/api/tags >/dev/null 2>&1; then
   echo "Ollama を起動中..."
-  open -a Ollama
+  ollama serve >/dev/null 2>&1 &
   # 起動待ち（最大15秒）
   for i in {1..15}; do
     sleep 1
