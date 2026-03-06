@@ -4,6 +4,13 @@ set -e
 # aqua-code: Claude Code + Ollama ワンコマンドランチャー
 # ~/.claude/ とは完全に分離された環境で動作します
 
+# Homebrew の PATH を確保（Apple Silicon / Intel 両対応）
+if [ -f /opt/homebrew/bin/brew ]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [ -f /usr/local/bin/brew ]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
+
 # デフォルトモデル（環境変数で上書き可能）
 MODEL="${AQUA_CODE_MODEL:-glm-5:cloud}"
 

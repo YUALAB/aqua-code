@@ -111,6 +111,13 @@ set -e
 # aqua-code: Claude Code + Ollama ワンコマンドランチャー
 # ~/.claude/ とは完全に分離された環境で動作します
 
+# Homebrew の PATH を確保（Apple Silicon / Intel 両対応）
+if [ -f /opt/homebrew/bin/brew ]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [ -f /usr/local/bin/brew ]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
+
 # デフォルトモデル（環境変数で上書き可能）
 MODEL="${AQUA_CODE_MODEL:-glm-5:cloud}"
 
@@ -143,6 +150,17 @@ DISABLE_TELEMETRY=1 \
 LAUNCHER
 chmod +x "$BIN_DIR/aqua-code"
 echo "[✓] ランチャー: $BIN_DIR/aqua-code"
+
+# --- Homebrew PATH 永続化（~/.zprofile） ---
+ZPROFILE="$HOME/.zprofile"
+if [ -f /opt/homebrew/bin/brew ]; then
+  BREW_LINE='eval "$(/opt/homebrew/bin/brew shellenv)"'
+  if [ ! -f "$ZPROFILE" ] || ! grep -qF 'brew shellenv' "$ZPROFILE"; then
+    echo "" >> "$ZPROFILE"
+    echo "$BREW_LINE" >> "$ZPROFILE"
+    echo "[✓] Homebrew PATH を ~/.zprofile に追加しました"
+  fi
+fi
 
 # --- PATH 設定（~/.zshrc） ---
 ZSHRC="$HOME/.zshrc"
